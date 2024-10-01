@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de Carros</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Gerenciamento de Carros</h1>
+    
+    <form id="carForm">
+        <input type="text" id="carName" placeholder="Nome do carro" required>
+        <input type="text" id="carPlate" placeholder="Placa do carro (ABC-1234)" required pattern="[A-Z]{3}-\d{4}">
+        <label>
+            <input type="checkbox" id="carFined"> Multado
+        </label>
+        <button type="submit">Adicionar Carro</button>
+    </form>
+
+    <div id="searchContainer">
+        <input type="text" id="searchInput" placeholder="Pesquisar por nome ou placa">
+    </div>
+
+    <div id="stats">
+        <p>Total de carros: <span id="totalCars">0</span></p>
+        <p>Carros multados: <span id="finedCars">0</span></p>
+    </div>
+
+    <table id="carTable">
+        <thead>
+            <tr>
+                <th>Nome do Carro</th>
+                <th>Placa</th>
+                <th>Status de Multa</th>
+                <th>Ação</th>
+            </tr>
+        </thead>
+        <tbody id="carList"></tbody>
+    </table>
+
+    <script src="script.js"></script>
+</body>
+</html>

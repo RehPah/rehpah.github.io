@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PetAmigo Admin - Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="admin.js" defer></script>
+    <script src="backend-simulado.js"></script>
+</head>
+<body class="admin-body">
+    <div class="admin-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="https://placehold.co/100x100" alt="Logo PetAmigo">
+                <h1>Admin</h1>
+            </div>
+            <nav class="admin-nav">
+                <ul>
+                    <li class="active">
+                        <a href="#dashboard"><i class="fas fa-chart-line"></i> Dashboard</a>
+                    </li>
+                    <li>
+                        <a href="#usuarios"><i class="fas fa-users"></i> Usuários</a>
+                    </li>
+                    <li>
+                        <a href="#pets"><i class="fas fa-paw"></i> Pets</a>
+                    </li>
+                    <li>
+                        <a href="#adocoes"><i class="fas fa-heart"></i> Adoções</a>
+                    </li>
+                    <li>
+                        <a href="#configuracoes"><i class="fas fa-cog"></i> Configurações</a>
+                    </li>
+                    <li>
+                        <a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> Sair</a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <div class="header-search">
+                    <input type="text" placeholder="Pesquisar...">
+                </div>
+                <div class="admin-profile">
+                    <span>Admin</span>
+                    <img src="https://placehold.co/40x40" alt="Admin">
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Usuários Ativos</h3>
+                            <p id="usuarios-ativos">0</p>
+                            <small class="trend up">+5% desde ontem</small>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-paw"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Pets Cadastrados</h3>
+                            <p id="pets-cadastrados">0</p>
+                            <small class="trend up">+12% este mês</small>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Adoções Realizadas</h3>
+                            <p id="adocoes-realizadas">0</p>
+                            <small class="trend up">+3% esta semana</small>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Visitas Hoje</h3>
+                            <p id="visitas-hoje">0</p>
+                            <small class="trend down">-2% desde ontem</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <h3>Acessos por Região</h3>
+                        <canvas id="acessos-regiao"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Visitas nas Últimas 24h</h3>
+                        <canvas id="visitas-24h"></canvas>
+                    </div>
+                </div>
+
+                <div class="data-tables">
+                    <div class="table-card">
+                        <h3>Últimos Acessos</h3>
+                        <table id="tabela-acessos">
+                            <thead>
+                                <tr>
+                                    <th>IP</th>
+                                    <th>Localização</th>
+                                    <th>Data/Hora</th>
+                                    <th>Dispositivo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Preenchido via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html> 

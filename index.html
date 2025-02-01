@@ -3,42 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciamento de Carros</title>
+    <title>PetAmigo - Adoção de Animais</title>
     <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="script.js" defer></script>
+    <script src="backend-simulado.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicia rastreamento quando alguém acessa o site
+            window.backend.rastrearAcesso();
+        });
+    </script>
 </head>
 <body>
-    <h1>Gerenciamento de Carros</h1>
-    
-    <form id="carForm">
-        <input type="text" id="carName" placeholder="Nome do carro" required>
-        <input type="text" id="carPlate" placeholder="Placa do carro (ABC-1234)" required pattern="[A-Z]{3}-\d{4}">
-        <label>
-            <input type="checkbox" id="carFined"> Multado
-        </label>
-        <button type="submit">Adicionar Carro</button>
-    </form>
+    <header>
+        <nav>
+            <div class="logo">
+                <img src="https://placehold.co/100x100" alt="Logo PetAmigo">
+                <h1>PetAmigo</h1>
+            </div>
+            <ul>
+                <li><a href="#home">Home</a></li>
+                <li><a href="#adotar">Adotar</a></li>
+                <li><a href="#doar">Doar</a></li>
+                <li><a href="#sobre">Sobre</a></li>
+                <li><a href="#contato">Contato</a></li>
+            </ul>
+        </nav>
+    </header>
 
-    <div id="searchContainer">
-        <input type="text" id="searchInput" placeholder="Pesquisar por nome ou placa">
-    </div>
+    <main>
+        <section id="home" class="hero">
+            <h2>Encontre seu novo melhor amigo</h2>
+            <p>Adote um animal e transforme duas vidas: a dele e a sua!</p>
+            <a href="#adotar" class="btn-primary">Quero Adotar</a>
+        </section>
 
-    <div id="stats">
-        <p>Total de carros: <span id="totalCars">0</span></p>
-        <p>Carros multados: <span id="finedCars">0</span></p>
-    </div>
+        <section id="adotar" class="pets-grid">
+            <h2>Animais para Adoção</h2>
+            <div class="filtros">
+                <input type="text" id="pesquisa" placeholder="Pesquisar animal...">
+                <select id="filtro-tipo">
+                    <option value="todos">Todos</option>
+                    <option value="cao">Cães</option>
+                    <option value="gato">Gatos</option>
+                    <option value="outro">Outros</option>
+                </select>
+                <select id="filtro-idade">
+                    <option value="todos">Todas as idades</option>
+                    <option value="filhote">Filhote</option>
+                    <option value="adulto">Adulto</option>
+                    <option value="idoso">Idoso</option>
+                </select>
+            </div>
+            <div class="grid" id="pets-container">
+                <!-- Os cards serão inseridos via JavaScript -->
+            </div>
+        </section>
 
-    <table id="carTable">
-        <thead>
-            <tr>
-                <th>Nome do Carro</th>
-                <th>Placa</th>
-                <th>Status de Multa</th>
-                <th>Ação</th>
-            </tr>
-        </thead>
-        <tbody id="carList"></tbody>
-    </table>
+        <!-- Modal para detalhes do pet -->
+        <div id="modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div class="modal-body">
+                    <div class="pet-images">
+                        <img src="" alt="" id="modal-pet-image">
+                        <div class="thumbnail-container"></div>
+                    </div>
+                    <div class="pet-info">
+                        <h2 id="modal-pet-name"></h2>
+                        <p id="modal-pet-age"></p>
+                        <p id="modal-pet-description"></p>
+                        <div class="pet-caracteristicas">
+                            <span class="tag"></span>
+                        </div>
+                        <button class="btn-primary interesse-btn">
+                            <i class="fas fa-heart"></i> Tenho Interesse
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <script src="script.js"></script>
+        <section id="doar" class="doar">
+            <h2>Quer doar um animal?</h2>
+            <p>Preencha o formulário abaixo com as informações do animal</p>
+            <form id="form-doacao">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <input type="text" id="nome-animal" placeholder="Nome do animal" required>
+                        <select id="tipo-animal" required>
+                            <option value="">Tipo de animal</option>
+                            <option value="cao">Cão</option>
+                            <option value="gato">Gato</option>
+                            <option value="outro">Outro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="number" id="idade-animal" placeholder="Idade aproximada" required>
+                        <select id="porte-animal" required>
+                            <option value="">Porte do animal</option>
+                            <option value="pequeno">Pequeno</option>
+                            <option value="medio">Médio</option>
+                            <option value="grande">Grande</option>
+                        </select>
+                    </div>
+                </div>
+                <textarea id="descricao-animal" placeholder="Descrição do animal" required></textarea>
+                <div class="upload-area" id="upload-area">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Arraste fotos aqui ou clique para selecionar</p>
+                    <input type="file" id="foto-animal" multiple accept="image/*" hidden>
+                </div>
+                <div id="preview-container" class="preview-container"></div>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-paw"></i> Cadastrar Animal
+                </button>
+            </form>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>PetAmigo</h3>
+                <p>Transformando vidas através da adoção responsável</p>
+            </div>
+            <div class="footer-section">
+                <h3>Contato</h3>
+                <p>Email: contato@petamigo.com</p>
+                <p>Tel: (11) 99999-9999</p>
+            </div>
+            <div class="footer-section">
+                <h3>Redes Sociais</h3>
+                <div class="social-links">
+                    <a href="#">Instagram</a>
+                    <a href="#">Facebook</a>
+                    <a href="#">Twitter</a>
+                </div>
+            </div>
+        </div>
+    </footer>
 </body>
-</html>
+</html> 

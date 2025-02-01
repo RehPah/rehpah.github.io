@@ -10,17 +10,12 @@ class BackendSimulado {
 
     async rastrearAcesso() {
         try {
-            // Primeira tentativa com ipapi.co (gratuita, sem token)
-            let response = await fetch('https://ipapi.co/json/');
-            let data = await response.json();
+            // Usando ipwhois.app - API gratuita com alto limite de requisições
+            const response = await fetch('https://ipwhois.app/json/');
+            const data = await response.json();
 
-            // Se falhar, tenta com o api.ipify.org + freegeoip.app
-            if (!data || data.error) {
-                const ipResponse = await fetch('https://api.ipify.org?format=json');
-                const ipData = await ipResponse.json();
-                
-                response = await fetch(`https://freegeoip.app/json/${ipData.ip}`);
-                data = await response.json();
+            if (!data.success) {
+                throw new Error('Falha ao obter dados de localização');
             }
 
             this.ipAtual = data.ip;
@@ -32,54 +27,94 @@ class BackendSimulado {
                 lastActivity: Date.now(),
                 userAgent: navigator.userAgent,
                 localizacao: {
-                    cidade: data.city || 'Local',
-                    estado: data.region || data.region_name || 'SP',
-                    pais: data.country_name || 'Brasil',
+                    cidade: data.city,
+                    estado: data.region,
+                    pais: data.country,
                     latitude: data.latitude,
-                    longitude: data.longitude
+                    longitude: data.longitude,
+                    isp: data.isp, // Provedor de internet
+                    tipo: data.type // Tipo de IP (IPv4/IPv6)
                 },
                 dispositivo: this.getDispositivoInfo(),
-                pagina: window.location.pathname
+                pagina: window.location.pathname,
+                conexao: {
+                    tipo: navigator.connection ? navigator.connection.effectiveType : 'unknown',
+                    velocidade: navigator.connection ? navigator.connection.downlink : 'unknown'
+                }
             };
 
-            // Atualiza ou adiciona novo acesso
+            // Verifica se já existe um acesso com mesmo IP
             const acessoExistente = this.acessos.find(a => a.ip === data.ip);
             if (acessoExistente) {
                 acessoExistente.lastActivity = Date.now();
-                acessoExistente.localizacao = acesso.localizacao; // Atualiza localização
+                acessoExistente.localizacao = acesso.localizacao;
+                acessoExistente.conexao = acesso.conexao;
             } else {
                 this.acessos.push(acesso);
                 this.usuariosOnline.add(data.ip);
             }
 
             this.salvarDadosLocalmente();
+            console.log('Novo acesso registrado:', acesso); // Debug
             return acesso;
 
         } catch (error) {
             console.error('Erro ao rastrear acesso:', error);
             
-            // Fallback simples com dados do navegador
-            const acesso = {
-                id: Date.now(),
-                ip: 'Local',
-                timestamp: new Date().toISOString(),
-                lastActivity: Date.now(),
-                userAgent: navigator.userAgent,
-                localizacao: {
-                    cidade: 'Local',
-                    estado: 'Local',
-                    pais: 'Brasil'
-                },
-                dispositivo: this.getDispositivoInfo(),
-                pagina: window.location.pathname
-            };
+            // Tenta uma segunda API como backup
+            try {
+                const backupResponse = await fetch('https://api.db-ip.com/v2/free/self');
+                const backupData = await backupResponse.json();
+                
+                const acesso = {
+                    id: Date.now(),
+                    ip: backupData.ipAddress,
+                    timestamp: new Date().toISOString(),
+                    lastActivity: Date.now(),
+                    userAgent: navigator.userAgent,
+                    localizacao: {
+                        cidade: backupData.city,
+                        estado: backupData.stateProv,
+                        pais: backupData.countryName,
+                        continente: backupData.continentName
+                    },
+                    dispositivo: this.getDispositivoInfo(),
+                    pagina: window.location.pathname
+                };
 
-            this.acessos.push(acesso);
-            this.usuariosOnline.add('local-user');
-            this.salvarDadosLocalmente();
-            
-            return acesso;
+                this.acessos.push(acesso);
+                this.usuariosOnline.add(backupData.ipAddress);
+                this.salvarDadosLocalmente();
+                
+                return acesso;
+            } catch (backupError) {
+                console.error('Erro no backup:', backupError);
+                return this.criarAcessoLocal();
+            }
         }
+    }
+
+    criarAcessoLocal() {
+        const acesso = {
+            id: Date.now(),
+            ip: 'Não detectado',
+            timestamp: new Date().toISOString(),
+            lastActivity: Date.now(),
+            userAgent: navigator.userAgent,
+            localizacao: {
+                cidade: 'Não detectada',
+                estado: 'Não detectado',
+                pais: 'Não detectado'
+            },
+            dispositivo: this.getDispositivoInfo(),
+            pagina: window.location.pathname
+        };
+
+        this.acessos.push(acesso);
+        this.usuariosOnline.add('local-user');
+        this.salvarDadosLocalmente();
+        
+        return acesso;
     }
 
     iniciarHeartbeat() {

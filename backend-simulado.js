@@ -18,10 +18,8 @@ class BackendSimulado {
                 throw new Error('Falha ao obter dados de localização');
             }
 
-            this.ipAtual = data.ip;
-
-            const acesso = {
-                id: Date.now(),
+            const novoAcesso = {
+                id: Date.now() + Math.random(), // Garante IDs únicos
                 ip: data.ip,
                 timestamp: new Date().toISOString(),
                 lastActivity: Date.now(),
@@ -32,65 +30,79 @@ class BackendSimulado {
                     pais: data.country,
                     latitude: data.latitude,
                     longitude: data.longitude,
-                    isp: data.isp, // Provedor de internet
-                    tipo: data.type // Tipo de IP (IPv4/IPv6)
+                    isp: data.isp,
+                    tipo: data.type
                 },
                 dispositivo: this.getDispositivoInfo(),
                 pagina: window.location.pathname,
                 conexao: {
                     tipo: navigator.connection ? navigator.connection.effectiveType : 'unknown',
                     velocidade: navigator.connection ? navigator.connection.downlink : 'unknown'
-                }
+                },
+                referrer: document.referrer || 'Direto'
             };
 
-            // Verifica se já existe um acesso com mesmo IP
-            const acessoExistente = this.acessos.find(a => a.ip === data.ip);
-            if (acessoExistente) {
-                acessoExistente.lastActivity = Date.now();
-                acessoExistente.localizacao = acesso.localizacao;
-                acessoExistente.conexao = acesso.conexao;
+            // Verifica se já existe um acesso similar nos últimos 5 minutos
+            const acessoRecente = this.acessos.find(a => 
+                a.ip === data.ip && 
+                a.dispositivo === novoAcesso.dispositivo &&
+                Date.now() - new Date(a.lastActivity).getTime() < 5 * 60 * 1000
+            );
+
+            if (acessoRecente) {
+                acessoRecente.lastActivity = Date.now();
+                acessoRecente.pagina = novoAcesso.pagina;
+                acessoRecente.referrer = novoAcesso.referrer;
             } else {
-                this.acessos.push(acesso);
+                this.acessos.unshift(novoAcesso); // Adiciona no início do array
                 this.usuariosOnline.add(data.ip);
             }
 
+            // Mantém apenas os últimos 1000 acessos para não sobrecarregar
+            if (this.acessos.length > 1000) {
+                this.acessos = this.acessos.slice(0, 1000);
+            }
+
             this.salvarDadosLocalmente();
-            console.log('Novo acesso registrado:', acesso); // Debug
-            return acesso;
+            console.log('Acesso registrado:', novoAcesso);
+            return novoAcesso;
 
         } catch (error) {
-            console.error('Erro ao rastrear acesso:', error);
-            
-            // Tenta uma segunda API como backup
-            try {
-                const backupResponse = await fetch('https://api.db-ip.com/v2/free/self');
-                const backupData = await backupResponse.json();
-                
-                const acesso = {
-                    id: Date.now(),
-                    ip: backupData.ipAddress,
-                    timestamp: new Date().toISOString(),
-                    lastActivity: Date.now(),
-                    userAgent: navigator.userAgent,
-                    localizacao: {
-                        cidade: backupData.city,
-                        estado: backupData.stateProv,
-                        pais: backupData.countryName,
-                        continente: backupData.continentName
-                    },
-                    dispositivo: this.getDispositivoInfo(),
-                    pagina: window.location.pathname
-                };
+            console.error('Erro na API principal:', error);
+            return this.tentarAPIBackup();
+        }
+    }
 
-                this.acessos.push(acesso);
-                this.usuariosOnline.add(backupData.ipAddress);
-                this.salvarDadosLocalmente();
-                
-                return acesso;
-            } catch (backupError) {
-                console.error('Erro no backup:', backupError);
-                return this.criarAcessoLocal();
-            }
+    async tentarAPIBackup() {
+        try {
+            const backupResponse = await fetch('https://api.db-ip.com/v2/free/self');
+            const backupData = await backupResponse.json();
+            
+            const acesso = {
+                id: Date.now() + Math.random(),
+                ip: backupData.ipAddress,
+                timestamp: new Date().toISOString(),
+                lastActivity: Date.now(),
+                userAgent: navigator.userAgent,
+                localizacao: {
+                    cidade: backupData.city,
+                    estado: backupData.stateProv,
+                    pais: backupData.countryName,
+                    continente: backupData.continentName
+                },
+                dispositivo: this.getDispositivoInfo(),
+                pagina: window.location.pathname,
+                referrer: document.referrer || 'Direto'
+            };
+
+            this.acessos.unshift(acesso);
+            this.usuariosOnline.add(backupData.ipAddress);
+            this.salvarDadosLocalmente();
+            
+            return acesso;
+        } catch (backupError) {
+            console.error('Erro nas APIs de backup:', backupError);
+            return this.criarAcessoLocal();
         }
     }
 
@@ -220,33 +232,37 @@ class BackendSimulado {
     getEstatisticas() {
         this.limparAcessosAntigos();
         
-        // Filtra apenas usuários realmente ativos
-        const usuariosAtivos = this.acessos.filter(acesso => 
-            Date.now() - new Date(acesso.lastActivity) < 5 * 60 * 1000
-        );
-
+        const agora = new Date();
+        const ultimasHoras = new Array(24).fill(0);
         const acessosPorRegiao = {};
         const acessosPorDispositivo = {};
-        const ultimasHoras = new Array(24).fill(0);
 
-        if (usuariosAtivos.length > 0) {
-            usuariosAtivos.forEach(acesso => {
-                const regiao = `${acesso.localizacao.cidade}, ${acesso.localizacao.estado}`;
-                acessosPorRegiao[regiao] = 1; // Apenas conta uma vez por região
+        // Considera usuários ativos nos últimos 5 minutos
+        const usuariosAtivos = this.acessos.filter(acesso => 
+            Date.now() - new Date(acesso.lastActivity).getTime() < 5 * 60 * 1000
+        );
 
-                const dispositivo = acesso.dispositivo.split(' - ')[0];
-                acessosPorDispositivo[dispositivo] = 1; // Apenas conta uma vez por dispositivo
+        this.acessos.forEach(acesso => {
+            const acessoData = new Date(acesso.timestamp);
+            const horasAtras = Math.floor((agora - acessoData) / (1000 * 60 * 60));
+            
+            if (horasAtras < 24) {
+                ultimasHoras[23 - horasAtras]++;
+            }
 
-                // Conta apenas o acesso atual na hora atual
-                const horaAtual = new Date().getHours();
-                ultimasHoras[horaAtual] = 1;
-            });
-        }
+            const regiao = `${acesso.localizacao.cidade}, ${acesso.localizacao.estado}`;
+            acessosPorRegiao[regiao] = (acessosPorRegiao[regiao] || 0) + 1;
+
+            const dispositivo = acesso.dispositivo.split(' - ')[0];
+            acessosPorDispositivo[dispositivo] = (acessosPorDispositivo[dispositivo] || 0) + 1;
+        });
 
         return {
             usuariosAtivos: usuariosAtivos.length,
-            visitasHoje: 1, // Apenas o usuário atual
-            ultimosAcessos: [usuariosAtivos[0]], // Apenas o acesso atual
+            visitasHoje: this.acessos.filter(a => 
+                new Date(a.timestamp).toDateString() === new Date().toDateString()
+            ).length,
+            ultimosAcessos: this.acessos.slice(0, 10), // Últimos 10 acessos
             acessosPorHora: ultimasHoras,
             acessosPorRegiao,
             acessosPorDispositivo
